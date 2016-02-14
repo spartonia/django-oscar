@@ -44,6 +44,10 @@ CommunicationEventType = get_model('customer', 'CommunicationEventType')
 logger = logging.getLogger('oscar.checkout')
 
 
+class DetailsView(CheckoutSessionMixin):
+    template_name =  'checkout/gateway.html'
+
+
 class IndexView(CheckoutSessionMixin, generic.FormView):
     """
     First page of the checkout.  We prompt user to either sign in, or
