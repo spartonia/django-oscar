@@ -3,7 +3,7 @@ from collections import OrderedDict
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
-OSCAR_SHOP_NAME = 'Oscar'
+OSCAR_SHOP_NAME = 'CleanJoy'
 OSCAR_SHOP_TAGLINE = ''
 OSCAR_HOMEPAGE = reverse_lazy('promotions:home')
 
@@ -20,7 +20,7 @@ OSCAR_RECENTLY_VIEWED_COOKIE_SECURE = False
 OSCAR_RECENTLY_VIEWED_PRODUCTS = 20
 
 # Currency
-OSCAR_DEFAULT_CURRENCY = 'GBP'
+OSCAR_DEFAULT_CURRENCY = 'kr'
 
 # Paths
 OSCAR_IMAGE_FOLDER = 'images/products/%Y/%m/'
@@ -34,7 +34,7 @@ OSCAR_UPLOAD_ROOT = '/tmp'
 
 # Address settings
 OSCAR_REQUIRED_ADDRESS_FIELDS = ('first_name', 'last_name', 'line1',
-                                 'line4', 'postcode', 'country')
+                                 'line4', 'postcode')
 
 # Pagination settings
 
@@ -49,7 +49,7 @@ OSCAR_STOCK_ALERTS_PER_PAGE = 20
 OSCAR_DASHBOARD_ITEMS_PER_PAGE = 20
 
 # Checkout
-OSCAR_ALLOW_ANON_CHECKOUT = False
+OSCAR_ALLOW_ANON_CHECKOUT = True
 
 # Promotions
 COUNTDOWN, LIST, SINGLE_PRODUCT, TABBED_BLOCK = (
@@ -65,8 +65,8 @@ OSCAR_PROMOTION_POSITIONS = (('page', 'Page'),
                              ('left', 'Left-hand sidebar'))
 
 # Reviews
-OSCAR_ALLOW_ANON_REVIEWS = True
-OSCAR_MODERATE_REVIEWS = False
+OSCAR_ALLOW_ANON_REVIEWS = False
+OSCAR_MODERATE_REVIEWS = True
 
 # Accounts
 OSCAR_ACCOUNTS_REDIRECT_URL = 'customer:profile-view'
