@@ -11,7 +11,7 @@
     {% include 'checkout/nav.html' with step=0 %}
 {% endblock %}
 
-{% block checkout_title %}{% trans "Who are you?" %}{% endblock %}
+{% block checkout_title %}{% trans "Service details" %}{% endblock %}
 
 {% block content %}
 
@@ -19,16 +19,11 @@
         {% csrf_token %}
         {{ form.non_field_errors }}
 
-        {% include "partials/form_field.html" with field=form.username %}
+        {% include "partials/form_field.html" with field=form.service_choice %}
 
-        <div class="form-group">
-            <div class="controls">
-                <div class="radio">
-                    {{ form.options.0 }}
-                </div>
-            </div>
-        </div>
 
+        <!-- Service extras as options here -->
+        <!--Could be boolean choices in the form, displayed as fancy blocks and icons here-->
         <div class="form-group {% if form.password.errors %}error{% endif %}">
             {{ form.options.errors }}
             <div class="controls">

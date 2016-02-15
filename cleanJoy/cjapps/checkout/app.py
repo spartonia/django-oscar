@@ -12,6 +12,8 @@ class CheckoutApplication(CoreCheckoutApplication):
 
     name = 'checkout'
 
+    details_view = get_class('checkout.views', 'DetailsView')
+    address_view = get_class('checkout.views', 'AddressView')
     index_view = get_class('checkout.views', 'IndexView')
     shipping_address_view = get_class('checkout.views', 'ShippingAddressView')
     user_address_update_view = get_class('checkout.views',
@@ -27,11 +29,12 @@ class CheckoutApplication(CoreCheckoutApplication):
 
     def get_urls(self):
         urls = [
-            url(r'^details/$', self.index_view.as_view(), name='index'),
+            url(r'^details/$', self.details_view.as_view(), name='index'),
+            # url(r'^$', self.details_view.as_view(), name='index'),
 
             # Shipping/user address views
             url(r'address/$',
-                self.shipping_address_view.as_view(), name='shipping-address'),
+                self.address_view.as_view(), name='address'),
             url(r'user-address/edit/(?P<pk>\d+)/$',
                 self.user_address_update_view.as_view(),
                 name='user-address-update'),

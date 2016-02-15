@@ -5,7 +5,7 @@
         {% spaceless %}
             <li class="step1 {% if step == 1 %}active{% else %}{% if step == 2 %}previous{% else %}{% if step > 1 %}visited{% else %}disabled{% endif %}{% endif %}{% endif %} ">
                 {% if step == 2 or step == 3 or step == 4 %}
-                    <a href="{% url 'checkout:shipping-address' %}">
+                    <a href="{% url 'checkout:address' %}">
                         <span class="visible-inline-sm icon-chevron-right"></span>
                         <span>
                             {% trans "1. Shipping address" %}

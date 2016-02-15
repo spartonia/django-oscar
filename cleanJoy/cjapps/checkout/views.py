@@ -16,6 +16,9 @@ from oscar.core.loading import get_class, get_classes, get_model
 
 from oscar.apps.checkout import signals
 
+from .forms import form_selector, HomeCleaningServiceForm, ServiceLocationAddress
+
+
 ShippingAddressForm, ShippingMethodForm, GatewayForm \
     = get_classes('checkout.forms', ['ShippingAddressForm', 'ShippingMethodForm', 'GatewayForm'])
 OrderCreator = get_class('order.utils', 'OrderCreator')
@@ -44,10 +47,40 @@ CommunicationEventType = get_model('customer', 'CommunicationEventType')
 logger = logging.getLogger('oscar.checkout')
 
 
-class DetailsView(CheckoutSessionMixin):
-    template_name =  'checkout/gateway.html'
+# ======================
+# Service Details (cart)
+# ======================
+class DetailsView(CheckoutSessionMixin, generic.FormView):
+    """
+    First page of the checkout, collects the service specification. This view basically is
+    (should be) cart application. The view and its forms vary according to the service choice,
+     eg Homestadning, flyttstadning, etc and their related extras.
+    """
+
+    def get_service_form(self):
+        return form_selector(self.request)
+
+    template_name = 'checkout/gateway.html'
+    form_class = HomeCleaningServiceForm  # get_service_form()
+    success_url = reverse_lazy('checkout:address')
+
+    def get(self, request, *args, **kwargs):
+        return super(DetailsView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # We raise a signal to indicate that the user has entered the
+        # checkout process.
+        signals.start_checkout.send_robust(
+            sender=self, request=self.request
+        )
+
+        return redirect(self.get_success_url())
+
+    def get_success_response(self):
+        return redirect(self.get_success_url())
 
 
+# TODO remove
 class IndexView(CheckoutSessionMixin, generic.FormView):
     """
     First page of the checkout.  We prompt user to either sign in, or
@@ -55,7 +88,7 @@ class IndexView(CheckoutSessionMixin, generic.FormView):
     """
     template_name = 'checkout/gateway.html'
     form_class = GatewayForm
-    success_url = reverse_lazy('checkout:shipping-address')
+    success_url = reverse_lazy('checkout:address')
     pre_conditions = [
         'check_basket_is_not_empty',
         'check_basket_is_valid']
@@ -97,7 +130,7 @@ class IndexView(CheckoutSessionMixin, generic.FormView):
                       "back to the checkout process"))
                 self.success_url = "%s?next=%s&email=%s" % (
                     reverse('customer:register'),
-                    reverse('checkout:shipping-address'),
+                    reverse('checkout:address'),
                     urlquote(email)
                 )
         else:
@@ -116,49 +149,51 @@ class IndexView(CheckoutSessionMixin, generic.FormView):
 
 
 # ================
-# SHIPPING ADDRESS
+# ADDRESS
 # ================
 
-
-class ShippingAddressView(CheckoutSessionMixin, generic.FormView):
+class AddressView(CheckoutSessionMixin, generic.FormView):
     """
-    Determine the shipping address for the order.
+    Determine the address for the order.
 
+    user handling logic:
+    if user.authenticated():
+        form_initial = get_address()
+    else:
+        login_form() : opt for login,
+        if logged_in:
+            form_initial = get_address()
+        address_form()
+
+    TODO: required?
     The default behaviour is to display a list of addresses from the users's
     address book, from which the user can choose one to be their shipping
     address.  They can add/edit/delete these USER addresses.  This address will
     be automatically converted into a SHIPPING address when the user checks
     out.
+    # TODO
+    s = ['check_basket_is_not_empty',
+    #                   'check_basket_is_valid',
+    #                   'check_user_email_is_captured']
+    # skip_conditions = ['skip_unless_basket_requires_shipping']
+
 
     Alternatively, the user can enter a SHIPPING address directly which will be
     saved in the session and later saved as ShippingAddress model when the
     order is successfully submitted.
     """
-    template_name = 'checkout/shipping_address.html'
-    form_class = ShippingAddressForm
-    success_url = reverse_lazy('checkout:shipping-method')
-    pre_conditions = ['check_basket_is_not_empty',
-                      'check_basket_is_valid',
-                      'check_user_email_is_captured']
-    skip_conditions = ['skip_unless_basket_requires_shipping']
+    template_name = 'checkout/address.html'
+    form_class = ServiceLocationAddress
+    success_url = reverse_lazy('checkout:preview')
 
-    def get_initial(self):
-        initial = self.checkout_session.new_shipping_address_fields()
-        if initial:
-            initial = initial.copy()
-            # Convert the primary key stored in the session into a Country
-            # instance
-            try:
-                initial['country'] = Country.objects.get(
-                    iso_3166_1_a2=initial.pop('country_id'))
-            except Country.DoesNotExist:
-                # Hmm, the previously selected Country no longer exists. We
-                # ignore this.
-                pass
-        return initial
+    # TODO
+    # pre_conditions = ['check_basket_is_not_empty',
+    #                   'check_basket_is_valid',
+    #                   'check_user_email_is_captured']
+    # skip_conditions = ['skip_unless_basket_requires_shipping']
 
     def get_context_data(self, **kwargs):
-        ctx = super(ShippingAddressView, self).get_context_data(**kwargs)
+        ctx = super(AddressView, self).get_context_data(**kwargs)
         if self.request.user.is_authenticated():
             # Look up address book data
             ctx['addresses'] = self.get_available_addresses()
@@ -168,9 +203,13 @@ class ShippingAddressView(CheckoutSessionMixin, generic.FormView):
         # Include only addresses where the country is flagged as valid for
         # shipping. Also, use ordering to ensure the default address comes
         # first.
-        return self.request.user.addresses.filter(
-            country__is_shipping_country=True).order_by(
-            '-is_default_for_shipping')
+        return self.request.user.addresses.all().order_by(
+            '-is_default_for_shipping')[:2]
+
+    # def get_initial(self):
+    #     if self.request.user.is_authenticated() and self.get_available_addresses().exists():
+    #         initial = self.get_available_addresses()[0]
+    #         return initial
 
     def post(self, request, *args, **kwargs):
         # Check if a shipping address was selected directly (eg no form was
@@ -187,7 +226,7 @@ class ShippingAddressView(CheckoutSessionMixin, generic.FormView):
             else:
                 return http.HttpResponseBadRequest()
         else:
-            return super(ShippingAddressView, self).post(
+            return super(AddressView, self).post(
                 request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -196,7 +235,7 @@ class ShippingAddressView(CheckoutSessionMixin, generic.FormView):
             (k, v) for (k, v) in form.instance.__dict__.items()
             if not k.startswith('_'))
         self.checkout_session.ship_to_new_address(address_fields)
-        return super(ShippingAddressView, self).form_valid(form)
+        return super(AddressView, self).form_valid(form)
 
 
 class UserAddressUpdateView(CheckoutSessionMixin, generic.UpdateView):
@@ -205,7 +244,7 @@ class UserAddressUpdateView(CheckoutSessionMixin, generic.UpdateView):
     """
     template_name = 'checkout/user_address_form.html'
     form_class = UserAddressForm
-    success_url = reverse_lazy('checkout:shipping-address')
+    success_url = reverse_lazy('checkout:address')
 
     def get_queryset(self):
         return self.request.user.addresses.all()
@@ -225,7 +264,7 @@ class UserAddressDeleteView(CheckoutSessionMixin, generic.DeleteView):
     Delete an address from a user's addressbook.
     """
     template_name = 'checkout/user_address_delete.html'
-    success_url = reverse_lazy('checkout:shipping-address')
+    success_url = reverse_lazy('checkout:address')
 
     def get_queryset(self):
         return self.request.user.addresses.all()
@@ -239,7 +278,7 @@ class UserAddressDeleteView(CheckoutSessionMixin, generic.DeleteView):
 # Shipping method
 # ===============
 
-
+# TODO remove
 class ShippingMethodView(CheckoutSessionMixin, generic.FormView):
     """
     View for allowing a user to choose a shipping method.
@@ -340,7 +379,7 @@ class ShippingMethodView(CheckoutSessionMixin, generic.FormView):
 # Payment method
 # ==============
 
-
+# TODO remove?
 class PaymentMethodView(CheckoutSessionMixin, generic.TemplateView):
     """
     View for a user to choose which payment method(s) they want to use.
@@ -352,8 +391,9 @@ class PaymentMethodView(CheckoutSessionMixin, generic.TemplateView):
     pre_conditions = [
         'check_basket_is_not_empty',
         'check_basket_is_valid',
-        'check_user_email_is_captured',
-        'check_shipping_data_is_captured']
+        # 'check_user_email_is_captured',
+        # 'check_shipping_data_is_captured',
+    ]
     skip_conditions = ['skip_unless_payment_is_required']
 
     def get(self, request, *args, **kwargs):
@@ -412,7 +452,8 @@ class PaymentDetailsView(OrderPlacementMixin, generic.TemplateView):
         'check_basket_is_not_empty',
         'check_basket_is_valid',
         'check_user_email_is_captured',
-        'check_shipping_data_is_captured']
+        # 'check_shipping_data_is_captured'
+    ]
 
     # If preview=True, then we render a preview template that shows all order
     # details ready for submission.
@@ -422,7 +463,7 @@ class PaymentDetailsView(OrderPlacementMixin, generic.TemplateView):
         if self.preview:
             # The preview view needs to ensure payment information has been
             # correctly captured.
-            return self.pre_conditions + ['check_payment_data_is_captured']
+            return self.pre_conditions  # + ['check_payment_data_is_captured']
         return super(PaymentDetailsView, self).get_pre_conditions(request)
 
     def get_skip_conditions(self, request):

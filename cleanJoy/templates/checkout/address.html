@@ -27,13 +27,14 @@
                             {% block select_address_form %}
                                 <li class="well">
                                     <address>
+                                    <address>
                                         {% block select_address_fields %}
                                             {% for field in address.active_address_fields %}
                                                 <span>{{ field }}</span>{% if not forloop.first %}<br/>{% endif %}
                                             {% endfor %}
                                         {% endblock %}
                                     </address>
-                                    <form action="{% url 'checkout:shipping-address' %}" method="post" id="select_shipping_address_{{ address.id }}">
+                                    <form action="{% url 'checkout:address' %}" method="post" id="select_shipping_address_{{ address.id }}">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="ship_to" />
                                         <input type="hidden" name="address_id" value="{{ address.id }}" />
@@ -71,7 +72,7 @@
 
     {% block new_address_form %}
         <div class="well">
-            <form action="{% url 'checkout:shipping-address' %}" method="post" id="new_shipping_address" class="form form-horizontal">
+            <form action="{% url 'checkout:address' %}" method="post" id="new_shipping_address" class="form form-horizontal">
                 {% csrf_token %}
                 {% include "partials/form_fields.html" with form=form style='horizontal' %}
                 <div class="form-group">

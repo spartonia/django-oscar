@@ -30,7 +30,7 @@
                 {% if shipping_address %}
                     <div class="well well-info">
                         {% block shipping_address_actions %}
-                            <a href="{% url 'checkout:shipping-address' %}" class="pull-right">
+                            <a href="{% url 'checkout:address' %}" class="pull-right">
                                 {% trans "Change" %}
                             </a>
                         {% endblock %}
