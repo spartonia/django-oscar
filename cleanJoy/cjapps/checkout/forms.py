@@ -5,6 +5,7 @@ from oscar.apps.address.forms import AbstractAddressForm
 from oscar.views.generic import PhoneNumberMixin
 from oscar.core.loading import get_model
 
+
 def form_selector(request):
     """
     Returns a suitable form according the service id (which is obtained from url parameters -
@@ -51,3 +52,7 @@ class ServiceLocationAddress(AbstractAddressForm):
             'phone_number', 'notes',
         ]
 
+
+class StripeTokenForm(forms.Form):
+    stripeEmail = forms.EmailField(widget=forms.HiddenInput())
+    stripeToken = forms.CharField(widget=forms.HiddenInput())

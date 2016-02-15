@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.flatpages',
     'compressor',
     'widget_tweaks',
+    'stripe',
 ] + get_core_apps([
     'cjapps.checkout'
 ])
@@ -205,3 +206,8 @@ TEMPLATE_DIRS = (
     OSCAR_MAIN_TEMPLATE_DIR,
 )
 
+
+# Stripe
+STRIPE_SECRET_KEY = 'sk_test_xbyO03Z2ipPLioEErG2ztUqT'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_S29p0j1zedmgqWItEUertiXB'
+STRIPE_CURRENCY = 'SEK'
