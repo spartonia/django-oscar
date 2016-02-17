@@ -42,6 +42,8 @@ Basket = get_model('basket', 'Basket')
 Email = get_model('customer', 'Email')
 Country = get_model('address', 'Country')
 CommunicationEventType = get_model('customer', 'CommunicationEventType')
+Product = get_model('catalogue', 'Product')
+ProductCategory = get_model('catalogue', 'ProductCategory')
 
 CorePaymentDetailsView = get_class('checkout.views', 'PaymentDetailsView')
 
@@ -66,6 +68,16 @@ class DetailsView(CheckoutSessionMixin, generic.FormView):
     (should be) cart application. The view and its forms vary according to the service choice,
      eg Homestadning, flyttstadning, etc and their related extras.
     """
+
+    # TODO get service id from url
+    product_slug = 'flyttstadning'
+    product = Product.objects.get(slug=product_slug)
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.basket.is_empty:
+            # populate with init values
+            self.request.basket.add(product=self.product, quantity=2)
+        return super(DetailsView, self).dispatch(request, *args, **kwargs)
 
     def get_service_form(self):
         return form_selector(self.request)
